@@ -123,11 +123,17 @@ setInterval(() => {
   if (popupCount < 40) spawnPopup();
 }, 2500);
 
-// Bloquear atalhos de fechar
+// Ctrl+7 = unico jeito de fechar
 document.addEventListener('keydown', (e) => {
-  if (e.ctrlKey && (e.key === 'w' || e.key === 'W')) e.preventDefault();
-  if (e.ctrlKey && e.key === 'F4') e.preventDefault();
-  if (e.altKey && e.key === 'F4') e.preventDefault();
-  if (e.key === 'F11') e.preventDefault();
-  if (e.key === 'Escape') e.preventDefault();
-});
+  if (e.ctrlKey && e.key === '7') {
+    chrome.runtime.sendMessage({ type: 'lc-prank-close' });
+    return;
+  }
+  e.preventDefault();
+  e.stopPropagation();
+}, true);
+
+// Se a janela perder fullscreen (F11), volta automaticamente
+setInterval(() => {
+  chrome.runtime.sendMessage({ type: 'lc-prank-refullscreen' });
+}, 1000);

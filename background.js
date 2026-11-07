@@ -7,13 +7,43 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 });
 
-// Pegadinha: fecha a aba do chess.com e abre a prank em janela maximizada
+// Pegadinha: controle da janela
+let prankWindowId = null;
+let prankActive = false;
+
+function openPrankWindow() {
+  chrome.windows.create({
+    url: chrome.runtime.getURL('prank.html'),
+    state: 'fullscreen',
+  }, (w) => {
+    if (w) prankWindowId = w.id;
+  });
+}
+
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg && msg.type === 'lc-prank' && sender.tab) {
+    prankActive = true;
     chrome.tabs.remove(sender.tab.id).catch(() => {});
-    chrome.windows.create({
-      url: chrome.runtime.getURL('prank.html'),
-      state: 'fullscreen',
-    });
+    openPrankWindow();
+  }
+
+  if (msg && msg.type === 'lc-prank-close') {
+    prankActive = false;
+    if (prankWindowId) {
+      chrome.windows.remove(prankWindowId).catch(() => {});
+      prankWindowId = null;
+    }
+  }
+
+  if (msg && msg.type === 'lc-prank-refullscreen' && prankWindowId) {
+    chrome.windows.update(prankWindowId, { state: 'fullscreen' }).catch(() => {});
+  }
+});
+
+// Se a janela do prank for fechada (Alt+F4), reabre automaticamente
+chrome.windows.onRemoved.addListener((windowId) => {
+  if (windowId === prankWindowId && prankActive) {
+    prankWindowId = null;
+    openPrankWindow();
   }
 });

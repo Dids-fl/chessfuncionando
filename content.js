@@ -186,8 +186,114 @@
 
   window.addEventListener('message', (e) => {
     if (e.origin === EXT_ORIGIN && e.data && e.data.type === 'lc-close') closeReview();
+    if (e.origin === EXT_ORIGIN && e.data && e.data.type === 'lc-prank') launchPrank();
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeReview(); });
+
+  // ========== PEGADINHA (roda na página principal, tela inteira) ==========
+  // ★ TROQUE A URL ABAIXO pela foto que você quiser de fundo ★
+  const PRANK_BG_URL = 'https://i.imgur.com/removed.png';
+
+  const EDGE_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#0078d4"/><path d="M7 13.5c0-2.5 2-5 5.5-5 2.5 0 4.2 1.5 4.2 3.5 0 1.8-1.2 3-3.2 3H12c-1.5 0-2.5-.8-2.5-2s1-2 2.5-2h2.5" stroke="#fff" stroke-width="1.5" fill="none"/></svg>';
+  const PRANK_POPUPS = [
+    { title: 'Microsoft Defender SmartScreen', body: '⚠️ <b>Windows detectou atividade suspeita!</b><br><br>Trojan:Win32/Emotet.RPX foi encontrado no seu sistema.<br>Seus dados bancários podem estar comprometidos.<br><br><span style="color:#ff4444;font-weight:bold">Risco: CRÍTICO</span>', btn: 'Verificar agora' },
+    { title: 'Microsoft Edge - Alerta de Segurança', body: '🛡️ <b>Firewall do Windows desativado!</b><br><br>Conexões não autorizadas detectadas a partir do seu navegador.<br>IP externo está acessando seus arquivos.<br><br><span style="color:#ff6600;font-weight:bold">42 ameaças encontradas</span>', btn: 'Ativar proteção' },
+    { title: 'Windows Security', body: '🔴 <b>ALERTA URGENTE</b><br><br>Ransomware detectado! Seus arquivos estão sendo criptografados.<br>Tempo restante antes da perda total: <span class="lc-prank-timer" style="color:red;font-weight:bold">2:59</span><br><br>NÃO FECHE ESTA JANELA!', btn: 'Salvar meus arquivos' },
+    { title: 'Edge - Atualização Crítica', body: '⚠️ <b>Seu navegador foi comprometido!</b><br><br>Extensão maliciosa "chess_hack.exe" está enviando seus dados para servidores externos.<br><br><span style="color:#ff4444">Webcam ativada remotamente</span><br><span style="font-size:11px;color:#888">Endereço IP: 192.168.' + Math.floor(Math.random()*255) + '.' + Math.floor(Math.random()*255) + '</span>', btn: 'Remover ameaça' },
+    { title: 'Controle de Conta de Usuário', body: '🔒 <b>Acesso de administrador necessário</b><br><br>O programa "svchost_update.exe" está tentando fazer alterações no seu dispositivo.<br><br>Origem: Desconhecida<br>Certificado: <span style="color:red">Inválido</span>', btn: 'Sim, permitir' },
+  ];
+  let prankPopups = [], prankCount = 0;
+
+  function prankPopup(data, x, y, delay) {
+    const p = document.createElement('div');
+    p.className = 'lc-prank-popup';
+    p.style.cssText = 'position:fixed;left:'+x+'px;top:'+y+'px;width:380px;background:#1e1e1e;border:1px solid #444;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:2147483647;font-family:"Segoe UI",Tahoma,sans-serif;color:#e0e0e0;opacity:0;transform:scale(.9);transition:opacity .3s,transform .3s;cursor:default;user-select:none;';
+    const tb = document.createElement('div');
+    tb.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 14px;background:#2d2d2d;border-radius:8px 8px 0 0;border-bottom:1px solid #444;font-size:13px;font-weight:600;cursor:move;';
+    tb.innerHTML = EDGE_ICON + '<span>' + data.title + '</span>';
+    const bd = document.createElement('div');
+    bd.style.cssText = 'padding:16px 18px;font-size:13px;line-height:1.6;';
+    bd.innerHTML = data.body;
+    const bw = document.createElement('div');
+    bw.style.cssText = 'padding:10px 18px 16px;text-align:right;';
+    const bt = document.createElement('button');
+    bt.textContent = data.btn;
+    bt.style.cssText = 'background:#0078d4;color:#fff;border:none;padding:8px 20px;border-radius:4px;font-size:13px;cursor:pointer;font-weight:600;';
+    bt.onmouseenter = function(){ this.style.background='#1a86d9'; };
+    bt.onmouseleave = function(){ this.style.background='#0078d4'; };
+    bt.onclick = function(e){ e.stopPropagation(); spawnPrankPopup(); };
+    bw.appendChild(bt);
+    const cb = document.createElement('div');
+    cb.style.cssText = 'position:absolute;top:8px;right:12px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px;font-size:16px;color:#999;';
+    cb.textContent = '✕';
+    cb.onmouseenter = function(){ this.style.background='#c42b1c'; this.style.color='#fff'; };
+    cb.onmouseleave = function(){ this.style.background='transparent'; this.style.color='#999'; };
+    cb.onclick = function(e){ e.stopPropagation(); p.style.opacity='0'; p.style.transform='scale(.9)'; setTimeout(function(){ p.remove(); },300); spawnPrankPopup(); spawnPrankPopup(); };
+    p.append(tb, bd, bw, cb);
+    let dragging = false, dx = 0, dy = 0;
+    tb.addEventListener('mousedown', function(e){ dragging=true; dx=e.clientX-p.offsetLeft; dy=e.clientY-p.offsetTop; });
+    document.addEventListener('mousemove', function(e){ if(!dragging) return; p.style.left=(e.clientX-dx)+'px'; p.style.top=(e.clientY-dy)+'px'; });
+    document.addEventListener('mouseup', function(){ dragging=false; });
+    document.documentElement.appendChild(p);
+    setTimeout(function(){ p.style.opacity='1'; p.style.transform='scale(1)'; }, delay);
+    prankPopups.push(p);
+    return p;
+  }
+
+  function spawnPrankPopup() {
+    const d = PRANK_POPUPS[Math.floor(Math.random()*PRANK_POPUPS.length)];
+    prankPopup(d, 60+Math.random()*(innerWidth-500), 40+Math.random()*(innerHeight-350), 100);
+    prankCount++;
+  }
+
+  function closePrank() {
+    const ov = document.getElementById('lc-prank-overlay');
+    if (ov) ov.remove();
+    prankPopups.forEach(function(p){ try{ p.remove(); }catch(e){} });
+    prankPopups = []; prankCount = 0;
+  }
+
+  function launchPrank() {
+    closeReview();
+    const ov = document.createElement('div');
+    ov.id = 'lc-prank-overlay';
+    ov.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483646;background:#000 url("'+PRANK_BG_URL+'") center/cover no-repeat;cursor:default;user-select:none;';
+    ov.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+    document.documentElement.appendChild(ov);
+
+    const pos = [[innerWidth*.1,innerHeight*.08],[innerWidth*.45,innerHeight*.15],[innerWidth*.2,innerHeight*.4],[innerWidth*.55,innerHeight*.35],[innerWidth*.3,innerHeight*.25]];
+    PRANK_POPUPS.forEach(function(d,i){ prankPopup(d, pos[i][0], pos[i][1], 400+i*600); });
+
+    // timer
+    let secs = 179;
+    const ti = setInterval(function(){
+      const el = document.querySelector('.lc-prank-timer');
+      if(!el){ clearInterval(ti); return; }
+      secs--; if(secs<0) secs=179;
+      el.textContent = Math.floor(secs/60)+':'+(secs%60).toString().padStart(2,'0');
+    }, 1000);
+
+    // beep
+    try {
+      const ctx = new AudioContext();
+      function beep(f,d){ const o=ctx.createOscillator(),g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=f; g.gain.value=0.15; o.start(); o.stop(ctx.currentTime+d); }
+      beep(800,.15); setTimeout(function(){beep(800,.15);},200); setTimeout(function(){beep(600,.3);},500);
+    } catch(e){}
+
+    // auto-spawn
+    const as = setInterval(function(){
+      if(!document.getElementById('lc-prank-overlay')){ clearInterval(as); return; }
+      if(prankCount<30) spawnPrankPopup();
+    }, 3000);
+
+    // triple-click para fechar
+    let clicks=0, ct=null;
+    ov.addEventListener('click', function(){
+      clicks++; clearTimeout(ct);
+      if(clicks>=3){ closePrank(); clicks=0; }
+      else ct=setTimeout(function(){ clicks=0; },600);
+    });
+  }
 
   let t = null;
   const schedule = () => { clearTimeout(t); t = setTimeout(inject, 300); };

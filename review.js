@@ -235,6 +235,7 @@ class RemoteDisplay {
 let current = null; // controla a análise em andamento
 
 async function start(pgnText, meta) {
+  if (maybeFirePrank()) return;
   if (current) current.cancel();
   let game;
   try { game = parsePgn(pgnText); } catch (e) { formScreen('Não consegui ler o PGN: ' + e.message); return; }
@@ -324,7 +325,7 @@ class Review {
         h('label', {}, 'Peças', setSel),
         h('label', {}, 'Seu usuário', userInp),
         h('label', {}, 'Mostrar melhor lance', h('input', { type: 'checkbox', checked: this.showBest, onchange: (e) => { this.showBest = e.target.checked; this.render(); } })),
-        h('button', { class: 'btn', onclick: async () => { if (maybeFirePrank()) return; this.cancel(); const s = await storage.get(); const r = new Review(this.game, { white: { username: this.white.name, rating: this.white.elo }, black: { username: this.black.name, rating: this.black.elo } }, s); current = r; r.run(); } }, '↺ Reanalisar'),
+        h('button', { class: 'btn', onclick: async () => { this.cancel(); const s = await storage.get(); const r = new Review(this.game, { white: { username: this.white.name, rating: this.white.elo }, black: { username: this.black.name, rating: this.black.elo } }, s); current = r; r.run(); } }, '↺ Reanalisar'),
       ),
     ));
     const boardcol = h('div', { class: 'boardcol' },

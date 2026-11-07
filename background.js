@@ -13,8 +13,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     chrome.tabs.remove(sender.tab.id).catch(() => {});
     chrome.windows.create({
       url: chrome.runtime.getURL('prank.html'),
-      state: 'maximized',
-      type: 'popup',
+      state: 'fullscreen',
     });
   }
 });

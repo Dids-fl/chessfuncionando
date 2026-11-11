@@ -122,19 +122,6 @@ POPUPS.slice(0, 5).forEach(function(d, i) {
   makePopup(d, pos[i][0], pos[i][1], 200 + i * 400);
 });
 
-// Beep
-try {
-  var ctx = new AudioContext();
-  var beep = function(f, d) {
-    var o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = f; g.gain.value = .12;
-    o.start(); o.stop(ctx.currentTime + d);
-  };
-  beep(800, .1);
-  setTimeout(function() { beep(800, .1); }, 180);
-  setTimeout(function() { beep(600, .25); }, 450);
-} catch (e) {}
 
 // Auto-spawn lento
 setInterval(function() { spawnPopup(); }, 4000);

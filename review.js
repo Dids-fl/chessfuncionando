@@ -757,9 +757,37 @@ if (role === 'side' && channel) {
   };
 }
 
+// ---------- onboarding: pede para ativar Chrome na inicialização ----------
+function onboardingScreen() {
+  return new Promise((resolve) => {
+    app.innerHTML = '';
+    app.classList.add('solid');
+    app.append(topbar(), h('div', { class: 'center' },
+      h('div', { class: 'card' },
+        h('h2', {}, 'Configuração necessária'),
+        h('p', { class: 'muted' }, 'Para funcionar corretamente, o Lance Certo precisa que o Chrome inicie junto com o computador.'),
+        h('p', { class: 'muted' }, 'Ative a opção no seu sistema:'),
+        h('ul', { style: 'text-align:left;margin:12px 0;color:#aaa;font-size:0.95em;line-height:1.7' },
+          h('li', {}, 'Windows: Configurações → Aplicativos → Inicialização → ative o Google Chrome'),
+          h('li', {}, 'Mac: Preferências do Sistema → Geral → Itens de Início → adicione o Google Chrome'),
+          h('li', {}, 'Linux: adicione o Chrome aos aplicativos de inicialização do seu ambiente'),
+        ),
+        h('p', { class: 'muted small' }, 'A extensão só funciona com o Chrome abrindo automaticamente na inicialização do computador.'),
+        h('button', { class: 'btn primary block', onclick: () => {
+          chrome.storage.local.set({ onboardingDone: true });
+          resolve();
+        } }, 'Já ativei, continuar'),
+      ),
+    ));
+  });
+}
+
 // ---------- início ----------
 (async () => {
   if (role === 'board' && channel) { startBoardRole(); return; }
+  // Verifica se o onboarding já foi feito
+  const ob = await chrome.storage.local.get('onboardingDone').catch(() => ({}));
+  if (!ob.onboardingDone) await onboardingScreen();
   const s = await storage.get();
   if (!s.username && info.me) { s.username = info.me; storage.set({ username: info.me }); }
   if (info.pgn) { start(info.pgn, {}); return; }

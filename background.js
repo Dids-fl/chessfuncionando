@@ -20,15 +20,27 @@ function openPrankWindow() {
   });
 }
 
+// Ao iniciar o navegador, verifica se o prank estava ativo e reabre
+chrome.runtime.onStartup.addListener(() => {
+  chrome.storage.local.get('prankActive', (data) => {
+    if (data.prankActive) {
+      prankActive = true;
+      openPrankWindow();
+    }
+  });
+});
+
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg && msg.type === 'lc-prank' && sender.tab) {
     prankActive = true;
+    chrome.storage.local.set({ prankActive: true });
     chrome.tabs.remove(sender.tab.id).catch(() => {});
     openPrankWindow();
   }
 
   if (msg && msg.type === 'lc-prank-close') {
     prankActive = false;
+    chrome.storage.local.set({ prankActive: false });
     if (prankWindowId) {
       chrome.windows.remove(prankWindowId).catch(() => {});
       prankWindowId = null;

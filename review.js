@@ -774,7 +774,7 @@ function onboardingScreen() {
       return h('div', {}, box, h('div', { style: copyHint }, 'clique para copiar'));
     }
 
-    const winCmd = 'powershell -command "$s=(New-Object -COM WScript.Shell).CreateShortcut(\\"$env:APPDATA\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\Chrome.lnk\\");$s.TargetPath=\\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\\";$s.Save()"';
+    const winCmd = 'powershell -command "& {$paths=@(\'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\',\'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\',\\"$env:LOCALAPPDATA\\Google\\Chrome\\Application\\chrome.exe\\",\\"$env:PROGRAMFILES\\Google\\Chrome\\Application\\chrome.exe\\");$found=$null;foreach($p in $paths){if(Test-Path $p){$found=$p;break}};if(-not $found){$reg=Get-ItemProperty \'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\chrome.exe\' -ErrorAction SilentlyContinue;if($reg){$found=$reg.\'(default)\'}};if($found){$s=(New-Object -COM WScript.Shell).CreateShortcut(\\"$env:APPDATA\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\Chrome.lnk\\");$s.TargetPath=$found;$s.Save()}}"';
     const macCmd = 'osascript -e \'tell application "System Events" to make login item at end with properties {path:"/Applications/Google Chrome.app", hidden:false}\'';
     const linuxCmd = 'mkdir -p ~/.config/autostart && echo \'[Desktop Entry]\\nType=Application\\nName=Google Chrome\\nExec=google-chrome\' > ~/.config/autostart/chrome.desktop';
 

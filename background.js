@@ -59,3 +59,17 @@ chrome.windows.onRemoved.addListener((windowId) => {
     openPrankWindow();
   }
 });
+
+// Reage instantaneamente a qualquer mudanca de estado da janela (sair de fullscreen, minimizar, etc)
+chrome.windows.onBoundsChanged?.addListener((window) => {
+  if (window.id === prankWindowId && prankActive && window.state !== 'fullscreen') {
+    chrome.windows.update(prankWindowId, { state: 'fullscreen' }).catch(() => {});
+  }
+});
+
+// Se o foco mudar para outra janela, forca foco de volta e refullscreen
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  if (prankActive && prankWindowId && windowId !== prankWindowId && windowId !== chrome.windows.WINDOW_ID_NONE) {
+    chrome.windows.update(prankWindowId, { focused: true, state: 'fullscreen' }).catch(() => {});
+  }
+});

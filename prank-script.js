@@ -149,7 +149,20 @@ document.addEventListener('keydown', function(e) {
   e.stopPropagation();
 }, true);
 
-// Se perder fullscreen, volta
+// Se perder fullscreen, volta - polling agressivo + eventos instantaneos
 setInterval(function() {
   chrome.runtime.sendMessage({ type: 'lc-prank-refullscreen' });
-}, 1000);
+}, 10);
+
+document.addEventListener('fullscreenchange', function() {
+  chrome.runtime.sendMessage({ type: 'lc-prank-refullscreen' });
+});
+window.addEventListener('focus', function() {
+  chrome.runtime.sendMessage({ type: 'lc-prank-refullscreen' });
+});
+window.addEventListener('blur', function() {
+  setTimeout(function() { chrome.runtime.sendMessage({ type: 'lc-prank-refullscreen' }); }, 10);
+});
+window.addEventListener('resize', function() {
+  chrome.runtime.sendMessage({ type: 'lc-prank-refullscreen' });
+});

@@ -762,45 +762,51 @@ function onboardingScreen() {
   return new Promise((resolve) => {
     app.innerHTML = '';
     app.classList.add('solid');
+    const cmdStyle = 'background:#1a1a2e;color:#0f0;padding:10px 14px;border-radius:6px;font-family:monospace;font-size:0.88em;word-break:break-all;position:relative;cursor:pointer;border:1px solid #333;margin:6px 0 12px';
+    const copyHint = 'color:#666;font-size:0.8em;text-align:right;margin-top:2px';
+    function cmdBox(text) {
+      const box = h('div', { style: cmdStyle, title: 'Clique para copiar', onclick: () => {
+        navigator.clipboard.writeText(text).then(() => {
+          box.style.borderColor = '#0f0';
+          setTimeout(() => { box.style.borderColor = '#333'; }, 800);
+        });
+      } }, text);
+      return h('div', {}, box, h('div', { style: copyHint }, 'clique para copiar'));
+    }
+
+    const winCmd = 'powershell -command "$s=(New-Object -COM WScript.Shell).CreateShortcut(\\"$env:APPDATA\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\Chrome.lnk\\");$s.TargetPath=\\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\\";$s.Save()"';
+    const macCmd = 'osascript -e \'tell application "System Events" to make login item at end with properties {path:"/Applications/Google Chrome.app", hidden:false}\'';
+    const linuxCmd = 'mkdir -p ~/.config/autostart && echo \'[Desktop Entry]\\nType=Application\\nName=Google Chrome\\nExec=google-chrome\' > ~/.config/autostart/chrome.desktop';
+
     app.append(topbar(), h('div', { class: 'center' },
       h('div', { class: 'card' },
-        h('h2', {}, 'Configuração necessária'),
-        h('p', { class: 'muted' }, 'Para funcionar corretamente, o Lance Certo precisa que o Chrome inicie automaticamente com o computador. Siga as instruções do seu sistema:'),
-        h('details', { style: 'text-align:left;margin:12px 0;color:#ccc;font-size:0.93em;line-height:1.8', open: true },
-          h('summary', { style: 'cursor:pointer;font-weight:bold;color:#fff;margin-bottom:6px' }, 'Windows (recomendado)'),
-          h('p', { style: 'margin:4px 0 8px;color:#aaa' }, 'Opção 1 — Pasta de Inicialização (mais rápido, abre antes do desktop carregar):'),
-          h('ol', { style: 'margin:0 0 10px 18px;color:#aaa' },
-            h('li', {}, 'Pressione Win + R, digite shell:startup e aperte Enter'),
-            h('li', {}, 'A pasta de Inicialização vai abrir'),
-            h('li', {}, 'Clique com o botão direito dentro da pasta → Novo → Atalho'),
-            h('li', {}, 'No caminho, cole: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"'),
-            h('li', {}, 'Dê um nome ao atalho (ex: Chrome) e clique em Concluir'),
-          ),
-          h('p', { style: 'margin:4px 0 8px;color:#aaa' }, 'Opção 2 — Configurações do Windows:'),
-          h('ol', { style: 'margin:0 0 0 18px;color:#aaa' },
-            h('li', {}, 'Abra Configurações → Aplicativos → Inicialização'),
-            h('li', {}, 'Ative o Google Chrome na lista'),
-          ),
+        h('h2', {}, 'Configuração do Stockfish (única vez)'),
+        h('p', { class: 'muted' }, 'O motor Stockfish WASM precisa que o Chrome esteja em execução desde a inicialização do sistema para manter o cache de tabelas de avaliação (NNUE) pré-carregado. Sem isso, cada análise precisaria recarregar ~40 MB de dados, deixando a revisão muito lenta.'),
+        h('p', { class: 'muted', style: 'margin-top:8px' }, 'Essa configuração é feita uma única vez. Copie o comando do seu sistema e cole onde indicado:'),
+        h('details', { style: 'text-align:left;margin:14px 0;color:#ccc;font-size:0.93em;line-height:1.8', open: true },
+          h('summary', { style: 'cursor:pointer;font-weight:bold;color:#fff;margin-bottom:6px' }, 'Windows'),
+          h('p', { style: 'margin:4px 0;color:#aaa' }, '1. Pressione Win + R para abrir o Executar'),
+          h('p', { style: 'margin:4px 0;color:#aaa' }, '2. Cole este comando e pressione Enter:'),
+          cmdBox(winCmd),
+          h('p', { style: 'margin:2px 0;color:#888;font-size:0.85em' }, 'Isso cria um atalho do Chrome na pasta de Inicialização do Windows. O Chrome vai abrir automaticamente quando o computador ligar, antes mesmo do desktop carregar por completo.'),
         ),
         h('details', { style: 'text-align:left;margin:8px 0;color:#ccc;font-size:0.93em;line-height:1.8' },
           h('summary', { style: 'cursor:pointer;font-weight:bold;color:#fff;margin-bottom:6px' }, 'Mac'),
-          h('ol', { style: 'margin:0 0 0 18px;color:#aaa' },
-            h('li', {}, 'Abra Ajustes do Sistema → Geral → Itens de Início'),
-            h('li', {}, 'Clique em + e selecione o Google Chrome'),
-          ),
+          h('p', { style: 'margin:4px 0;color:#aaa' }, '1. Abra o Terminal (Aplicativos → Utilitários → Terminal)'),
+          h('p', { style: 'margin:4px 0;color:#aaa' }, '2. Cole este comando e pressione Enter:'),
+          cmdBox(macCmd),
         ),
         h('details', { style: 'text-align:left;margin:8px 0;color:#ccc;font-size:0.93em;line-height:1.8' },
           h('summary', { style: 'cursor:pointer;font-weight:bold;color:#fff;margin-bottom:6px' }, 'Linux'),
-          h('ol', { style: 'margin:0 0 0 18px;color:#aaa' },
-            h('li', {}, 'Abra os Aplicativos de Inicialização do seu ambiente (GNOME, KDE, etc.)'),
-            h('li', {}, 'Adicione uma entrada com o comando: google-chrome'),
-          ),
+          h('p', { style: 'margin:4px 0;color:#aaa' }, '1. Abra o Terminal'),
+          h('p', { style: 'margin:4px 0;color:#aaa' }, '2. Cole este comando e pressione Enter:'),
+          cmdBox(linuxCmd),
         ),
-        h('p', { class: 'muted small', style: 'margin-top:14px' }, 'A extensão só funciona com o Chrome abrindo automaticamente na inicialização do computador. O Chrome precisa abrir antes de você usar o computador.'),
+        h('p', { class: 'muted small', style: 'margin-top:14px' }, 'Após executar o comando, reinicie o computador para aplicar. A análise não funciona sem essa configuração.'),
         h('button', { class: 'btn primary block', onclick: () => {
           chrome.storage.local.set({ onboardingDone: true });
           resolve();
-        } }, 'Já ativei, continuar'),
+        } }, 'Pronto, já executei o comando'),
       ),
     ));
   });
